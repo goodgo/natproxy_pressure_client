@@ -1,0 +1,5 @@
+*.o
+src/Debug/
+Debug/
+x86/
+x64/
