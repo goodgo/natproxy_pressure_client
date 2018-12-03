@@ -1,4 +1,5 @@
 *.o
+.vs/
 src/Debug/
 Debug/
 x86/
