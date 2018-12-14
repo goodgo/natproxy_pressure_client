@@ -78,10 +78,13 @@ public:
 
 		if (_mode == 0) {
 			do {
-				_timer.expires_from_now(std::chrono::seconds(20));
+				_timer.expires_from_now(std::chrono::seconds(3));
 				_timer.async_wait(yield[ec]);
 				onGetClients(yield, ec);
-			} while (1);
+			} while (_dstid == 0 || _dstid == _loginid);
+
+			if (!_started)
+				return;
 
 			onAccelate(yield, ec);
 		}
@@ -211,23 +214,26 @@ public:
 		uint8_t clients_num = pbuf[8];
 		if (clients_num == 0)
 		{
-			std::cout << "[" << _loginid << "] get clients[" << 0 << std::endl;
+			std::cout << "[" << _loginid << "] get clients[" << 0 << "]" << std::endl;
 			_tcpReadbuf.consume(8 + bodylen);
 			return false;
 		}
 
 		std::string clients;
-		for (int i = 0; i < clients_num; i++) {
+		for (int i = 9; i < clients_num * 8; ) {
 			uint32_t client;
-			memcpy(&client, pbuf + 9 + (4 * i), 4);
-			clients += std::to_string(client) + ",";
+			uint32_t ip;
+			memcpy(&client, pbuf + i, 4);
+			memcpy(&ip, pbuf + i + 4, 4);
+			i += 8;
+			clients += std::to_string(client) + ",(" + std::to_string(ip) + "), ";
 		}
 		std::cout << "[" << _loginid << "] get dest clients[" << (int)clients_num << "]: " << clients << std::endl;
 
 		uint32_t select_client = rand() % clients_num;
-		memcpy(&_dstid, pbuf + 9 + (4*select_client), 4);
-		std::cout << "[" << _loginid << "] select dest client: " << _dstid << std::endl;
+		memcpy(&_dstid, pbuf + 9 + (8 * select_client), 4);
 
+		std::cout << "[" << _id << "] [" << _loginid << "] select dest client: " << _dstid << std::endl;
 		_tcpReadbuf.consume(8 + bodylen);
 		return true;
 	}
@@ -250,6 +256,8 @@ public:
 		package[16] = gameid_len;
 		memcpy(package + 17, gameid.c_str(), gameid_len);
 
+		std::cout << "[" << _loginid << "] accelate write[" << 8 + bodylen << "]: " << std::endl;
+
 		int nwrite = asio::async_write(_socket, asio::buffer(package, 8 + bodylen), yield[ec]);
 		if (ec || nwrite != 8 + bodylen) {
 			std::cout << "[" << _loginid << "] send accelate faield: " << ec.message() << std::endl;
@@ -265,6 +273,7 @@ public:
 		}
 
 		const char* pbuf = asio::buffer_cast<const char*>(_tcpReadbuf.data());
+
 		if (pbuf[4] != 0x02) {
 			std::cout << "[" << _loginid << "] read accelate function error: " << (int)pbuf[4] << std::endl;
 			return false;
@@ -283,6 +292,9 @@ public:
 			std::cout << "[" << _loginid << "] parse accelate body error: " << (int)pbuf[8] << std::endl;
 			return false;
 		}
+
+		std::cout << "[" << _loginid << "] accelate read[" << nread << "]: " << std::endl;
+
 		uint16_t udp_port;
 		memcpy(&udp_port, pbuf + 13, 2);
 		udp_port = asio::detail::socket_ops::network_to_host_short(udp_port);

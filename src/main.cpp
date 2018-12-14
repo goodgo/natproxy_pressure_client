@@ -12,20 +12,19 @@ void StarSession(boost::asio::io_context& io, boost::asio::ip::tcp::endpoint ep,
 int main(char argc, char* argv[]) {
 	srand(time(NULL));
 
-		int mode = argc < 2 ? 0 : !!(int)atoi(argv[1]);
+	int mode = argc < 2 ? 0 : !!(int)atoi(argv[1]);
 	std::cout << "use mode: " << mode << ", " << (mode == 0 ? "source endpoint." : "destination endpoint.") << std::endl;
 
 	boost::asio::io_context io;
 	boost::asio::steady_timer timer(io);
 
 	boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address::from_string(SERVER_IP), 10001);
-	for (uint32_t i = 1; i < 1000; i++)
+	for (uint32_t i = 1; i < 2; i++)
 	{
-		timer.expires_after(std::chrono::milliseconds(10));
+		timer.expires_after(std::chrono::milliseconds(3));
 		timer.async_wait(boost::bind(StarSession, boost::ref(io), ep, mode, i));
 	}
 		
 	io.run();
-
 	return 0;
 }

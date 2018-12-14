@@ -1,8 +1,17 @@
 #pragma once
 
 #include <string>
+/*
+#include <iomanip>
+#include <sstream>
+#include <boost/spirit/include/karma.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/unordered/unordered_set.hpp>
+*/
+#define SERVER_IP "172.16.31.187"
 
-#define SERVER_IP "111.230.172.225" //广东6
+//#define SERVER_IP "111.230.172.225" //广东6
 //#define SERVER_IP "45.126.120.220"//福建1
 struct head
 {
@@ -35,4 +44,26 @@ namespace util {
 		}
 		return ret;
 	}
+
+	/*
+	inline std::string to_hex(const char*pbuf, const size_t len)
+	{
+		std::ostringstream out;
+		out << std::hex;
+		for (size_t i = 0; i < len; i++)
+			out << std::setfill('0') << std::setw(2) << (static_cast<short>(pbuf[i]) & 0xff) << " ";
+		return out.str();
+	}
+
+	inline std::string to_hex(std::string const& s)
+	{
+		return to_hex(s.c_str(), s.length());
+	}
+
+	template<typename T, std::size_t N>
+	inline std::string to_hex(T(&arr)[N])
+	{
+		return to_hex(arr, N);
+	}
+	*/
 }
