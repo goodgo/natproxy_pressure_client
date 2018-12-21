@@ -157,6 +157,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="chann.hpp" />
+    <ClInclude Include="protocol.hpp" />
     <ClInclude Include="signature.hpp" />
     <ClInclude Include="util.hpp" />
     <ClInclude Include="session.hpp" />

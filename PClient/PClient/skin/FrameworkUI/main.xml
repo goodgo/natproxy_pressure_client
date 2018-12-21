@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Window caption="0,0,0,37" size="840,560" mininfo="840,560" maxinfo="840,560" showshadow="true" shadowsize="10" shadowdarkness="50" >
+  <Font id="0" name="微软雅黑" size="17" bold="false" />
+  <Font id="1" name="微软雅黑" size="17" bold="true" />
+  <Font id="2" name="微软雅黑" size="14" bold="false" />
+  <Font id="3" name="微软雅黑" size="14" bold="true" />
+  <Font id="4" name="微软雅黑" size="16" bold="false" />
+  <Font id="5" name="微软雅黑" size="16" bold="true" />
+  <Default name="VScrollBar" value="width=&quot;10&quot; thumbnormalimage=&quot;file='FrameworkUI\image\scroll.png' source='0,0,10,10'&quot; bknormalimage=&quot;file='FrameworkUI\image\scroll.png' source='0,11,10,20'&quot; button1normalimage=&quot;file='FrameworkUI\image\scroll.png' source='0,21,10,30'&quot; button2normalimage=&quot;file='FrameworkUI\image\scroll.png' source='0,21,10,30'&quot; " />
+<VerticalLayout bkcolor="#FFFFFFFF" >
+  
+    <!--标题栏-->
+    <!--<Button name="BtnSuggest" pos="723, 5, 750, 32"  float="true" normalimage="file='FrameworkUI\image\suggest.png' source='0,0,27,27'" hotimage="file='FrameworkUI\image\suggest.png' source='0,0,27,27'" pushedimage="file='FrameworkUI\image\suggest.png' source='0,0,27,27'"/>-->
+    <AniButton name="BtnSuggest" width="28" height="28" frames="14"  pos="723, 4, 750, 32" float="true" bkimage="FrameworkUI\image\suggest.png" elapse="30" tooltip="反馈建议"/>
+    <AniButton name="BtnMenu" width="28" height="28" frames="8"  pos="751, 4, 778, 32" float="true" bkimage="FrameworkUI\image\menu.png" elapse="30" tooltip="主菜单"/>
+    <AniButton name="BtnMin" width="28" height="28" frames="8"  pos="779, 4, 806, 32" float="true" bkimage="FrameworkUI\image\Min.png" elapse="30" tooltip="最小化"/>
+    <AniButton name="BtnClose" width="28" height="28" frames="11"  pos="807, 4, 834, 32" float="true" bkimage="FrameworkUI\image\close.png" elapse="30" tooltip="关闭"/>
+
+  <!-- 用户名及密码 
+  <Text name="ConnectConet" text="WiFI名称：" textcolor="#FF333333" font="3" pos="28,225,150,250" float="true"></Text>
+  <Edit name="EdtConnectNumber" pos="138,221,484,251" float="true"
+        width="170" height="30" textcolor="#FF666666" normalimage="file='FrameworkUI\image\EditFrame.png' source='0,0,170,30'" hotimage="file='FrameworkUI\image\EditFrame.png' source='170,0,340,30'" focusedimage="file='FrameworkUI\image\EditFrame.png' source='340,0,510,30'"
+        font="2" borderround="2,2" textpadding="10,5,10,5" multiline="true" align="left"/>
+        
+        bkimage="FrameworkUI\image\Border-2.png" hotimage="FrameworkUI\image\EditFrame.png" pushedimage="FrameworkUI\image\Border-2.png" sepimage="FrameworkUI\image\Border-2.png
+
+        -->
+
+
+  <Text name="textTermInfo"      text="终端节点信息" textcolor="#FF333333" font="5" pos="40,40,200,60" float="true"></Text>
+   <List name="ListDemo1" float="true" pos="40,80,0,0" width="285" height="200" bkcolor="#FFFFFFFF"
+    itemtextcolor="#FF000000"
+    itembkcolor="#FFE2DDDF"
+    itemselectedtextcolor="#FF000000"
+    itemselectedbkcolor="#FFC1E3FF"
+    itemhottextcolor="#FF000000"
+    itemhotbkcolor="#FFE9F5FF"
+    itemdisabledtextcolor="#FFCCCCCC"
+    itemdisabledbkcolor="#FFFFFFFF"
+    vscrollbar="true"
+    hscrollbar="true" >
+    <ListHeader name="domain" bkimage="FrameworkUI\image\Border-3.png" hotimage="FrameworkUI\image\EditFrame.png" pushedimage="FrameworkUI\image\Border-3.png" sepimage="FrameworkUI\image\Border-3.png">
+      <ListHeaderItem text="序号" width="60"  height="30" minwidth="16"   sepwidth="1" align="center" />
+      <ListHeaderItem text="终端ID" width="110"  height="30" minwidth="16"  sepwidth="1" align="center" />
+      <ListHeaderItem text="终端IP" width="113"  height="30" minwidth="16"  sepwidth="1" align="center" />
+    </ListHeader>
+  </List>
+
+
+  <Text name="textPCInfo"      text="已连接WIFI终端" textcolor="#FF333333" font="5" pos="400,40,660,60" float="true"></Text>
+  <List name="ListPcInfo" float="true" pos="400,80,0,0" width="285" height="200" bkcolor="#FFFFFFFF"
+   itemtextcolor="#FF000000"
+   itembkcolor="#FFE2DDDF"
+   itemselectedtextcolor="#FF000000"
+   itemselectedbkcolor="#FFC1E3FF"
+   itemhottextcolor="#FF000000"
+   itemhotbkcolor="#FFE9F5FF"
+   itemdisabledtextcolor="#FFCCCCCC"
+   itemdisabledbkcolor="#FFFFFFFF"
+   vscrollbar="true"
+   hscrollbar="true" >
+    <ListHeader name="domain" bkimage="FrameworkUI\image\Border-3.png" hotimage="FrameworkUI\image\EditFrame.png" pushedimage="FrameworkUI\image\Border-3.png" sepimage="FrameworkUI\image\Border-3.png" hotimage="file='FrameworkUI\image\Border-3.png'">
+      <ListHeaderItem text="序号" width="60"  height="30" minwidth="16"   sepwidth="1" align="center" />
+      <ListHeaderItem text="连接IP" width="80"  height="30" minwidth="16"  sepwidth="1" align="center" />
+      <ListHeaderItem text="出口IP"  width="80"  height="30" minwidth="16"  sepwidth="1" align="center" />
+      <ListHeaderItem text="数据端口" width="63"  height="30" minwidth="16"  sepwidth="1" align="center" />
+    </ListHeader>
+  </List>
+  
+
+
+  
+  <Text name="textProxyInfo"      text="代理信息" textcolor="#FF333333" font="5" pos="40,300,200,320" float="true"></Text>
+  
+  <Text name="textCurTermIDName"  text="终端   ID：" textcolor="#FF333333" font="3" pos="80,330,160,350" float="true"></Text>
+  <Text name="textCurTermIDValue" text="" textcolor="#FF333333" font="3" pos="150,330,200,350" float="true"></Text>
+  <Text name="textTermTypeName"  text="终端类型：" textcolor="#FF333333" font="3" pos="280,330,400,350" float="true"></Text>
+  <Text name="textTermTypeValue" text="" textcolor="#FF333333" font="3" pos="360,330,430,350" float="true"></Text>
+  
+
+  <Text name="textServerIPName"  text="服务   IP：" textcolor="#FF333333" font="3" pos="80,360,160,380" float="true"></Text>
+  <Text name="textServerIPValue" text="111.230.172.225" textcolor="#FF333333" font="3" pos="150,360,280,380" float="true"></Text>
+  <Text name="textServerPortName"  text="数据端口：" textcolor="#FF333333" font="3" pos="280,360,400,380" float="true"></Text>
+  <Text name="textServerPortValue" text="" textcolor="#FF333333" font="3" pos="360,360,430,380" float="true"></Text>
+
+  <Text name="textProxyIPName"  text="已代理IP：" textcolor="#FF333333" font="3" pos="80,390,160,410" float="true"></Text>
+  <Text name="textProxyIPValue" text="" textcolor="#FF333333" font="3" pos="150,390,430,410" float="true"></Text>
+
+  <Text name="textProxyStateName"  text="代理结果："  textcolor="#FF333333" font="3" pos="80,420,160,440" float="true"></Text>
+  <Text name="textProxyStateValue" text="" textcolor="#FF333333" font="3" pos="150,420,430,440" float="true"></Text>
+
+  <Text name="textLoginStateName"  text="登入结果："  textcolor="#FF333333" font="3" pos="80,450,160,470" float="true"></Text>
+  <Text name="textLoginStateValue" text="未登入" textcolor="#FF333333" font="3" pos="150,450,280,470" float="true"></Text>
+  
+
+
+
+
+  <!--体检按钮-->
+   <Button name="BtnExam" pos="500, 305, 655, 349" float="true" normalimage="file='FrameworkUI\image\btn_login.png' source='0,0,155,44'" hotimage="file='FrameworkUI\image\btn_login.png' source='155,0,310,44'" pushedimage="file='FrameworkUI\image\btn_login.png' source='310,0,465,44'"/>
+   <Button name="BtnGetTermInfo" pos="500, 385, 655, 429" float="true" normalimage="file='FrameworkUI\image\btn_refresh.png' source='0,0,155,44'" hotimage="file='FrameworkUI\image\btn_refresh.png' source='155,0,310,44'" pushedimage="file='FrameworkUI\image\btn_refresh.png' source='310,0,465,44'"/>
+   <Button name="BtnSpeed" pos="500, 465, 655, 509" float="true" normalimage="file='FrameworkUI\image\btn_proxy.png' source='0,0,155,44'" hotimage="file='FrameworkUI\image\btn_proxy.png' source='155,0,310,44'" pushedimage="file='FrameworkUI\image\btn_proxy.png' source='310,0,465,44'"/>
+  
+</VerticalLayout>
+</Window>

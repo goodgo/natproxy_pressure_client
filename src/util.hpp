@@ -9,20 +9,12 @@
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/unordered/unordered_set.hpp>
 */
-#define SERVER_IP "172.16.31.187"
+//#define SERVER_IP "172.16.31.192"
 
-//#define SERVER_IP "111.230.172.225" //广东6
+#define SERVER_IP "111.230.172.225" //广东6
 //#define SERVER_IP "45.126.120.220"//福建1
-struct head
-{
-	uint8_t h1;
-	uint8_t h2;
-	uint8_t protoVersion;
-	uint8_t serverVersion;
-	uint8_t func;
-	uint8_t key;
-	uint16_t bodylen;
-};
+
+
 
 struct login
 {
@@ -33,11 +25,11 @@ struct login
 
 
 namespace util {
-	std::string getGuid(int mode)
+	std::string randGetGuid()
 	{
 		static const std::string s("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-		std::string ret = (mode == 0 ? "sp" : "ep");
-		for (int i = 0; i < 30; i++)
+		std::string ret;
+		for (int i = 0; i < 32; i++)
 		{
 			int k = rand() % s.size();
 			ret += s[k];
@@ -45,6 +37,28 @@ namespace util {
 		return ret;
 	}
 
+	uint32_t randGetAddr()
+	{
+		uint32_t addr = 0x0A000000;
+		for (int i = 0; i < 3; i++)
+		{
+			uint8_t *p = (uint8_t*)&addr;
+			p[i] = static_cast<uint8_t>(rand() % 255);
+		}
+		return addr;
+	}
+	std::string to_hex(const char* buf, size_t len)
+	{
+		std::string str;
+		char value[5];
+		for (int i = 0; i < len; i++)
+		{
+			memset(value, 0, sizeof(value));
+			sprintf(value, "%02X-", buf[i] & 0xff);
+			str += value;
+		}
+		return str;
+	}
 	/*
 	inline std::string to_hex(const char*pbuf, const size_t len)
 	{

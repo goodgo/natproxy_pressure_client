@@ -34,6 +34,19 @@ public:
 		sprintf(_handshake_byte, "%c", _dir == 0 ? SRC_HANDSHAKE_BYTE : DST_HANDSHAKE_BYTE);
 	}
 
+	~CChannel()
+	{	
+		switch (_dir) {
+		case 0:
+			std::cout << "[" << _remoteEp.port() << "] udp src endpoint destroy channel. " << std::endl;
+			break;
+		case 1:
+			std::cout << "[" << _localEp.port() << "] udp dst endpoint destroy channel. " << std::endl;
+			break;
+		default:
+			break;
+		}
+	}
 	static self_type start(asio::io_context& io, asio::ip::udp::endpoint& ep, uint8_t dir) {
 		self_type this_(new CChannel(io, ep, dir));
 		this_->go();
@@ -95,15 +108,15 @@ public:
 		asio::spawn(_strand, boost::bind(&CChannel::reader, shared_from_this(), boost::placeholders::_1));
 
 		data_st data[1];
-		//memset(data[0].data, 0xFF, BUFF_SIZE);
-		memcpy(data[0].data, "1234567890", 10);
+		size_t size = 10;
+		memcpy(data[0].data, "1234567890", size);
 
 		uint32_t seq = 1;
 		while (_started && seq < LOOP_CNT) {
 			data[0].id = seq;
 			boost::posix_time::ptime time_now = boost::posix_time::microsec_clock::universal_time();
 
-			uint32_t nsend = _socket.async_send(asio::buffer(data, BUFF_SIZE), yield[ec]);
+			uint32_t nsend = _socket.async_send(asio::buffer(data, sizeof(data->id) + size), yield[ec]);
 			if (ec || nsend <= 0) {
 				std::cout << "[" << _remoteEp.port() << "] udp src endpoint send failed: " << ec.message() << std::endl;
 				continue;
@@ -111,7 +124,8 @@ public:
 			_sendSeq.insert(SendSeqTimeMap::value_type(seq, time_now));
 			seq++;
 
-			_timer.expires_from_now(std::chrono::milliseconds(10));
+			int rs = rand() % 10;
+			_timer.expires_from_now(std::chrono::milliseconds(500 + (rs * 100)));
 			_timer.async_wait(yield[ec]);
 			if (ec) {
 				std::cout << "[" << _remoteEp.port() << "] udp src endpoint timer error: " << ec.message() << std::endl;
@@ -134,12 +148,12 @@ public:
 			}
 		}
 
-		std::cout << "[" << _remoteEp.port() << "] udp src endpoint endpoint sender finish." << std::endl;
+		std::cout << "[" << _remoteEp.port() << "] udp src endpoint sender finish." << std::endl;
 	}
 
 	bool SrcChannHandShake(asio::yield_context yield, boost::system::error_code& ec) {
 		while (_started) {
-			_timer.expires_from_now(std::chrono::seconds(1));
+			_timer.expires_from_now(std::chrono::seconds(3));
 			_timer.async_wait(yield[ec]);
 			if (ec) {
 				std::cout << "[" << _remoteEp.port() << "] udp src endpoint timer error: " << ec.message() << std::endl;
@@ -152,16 +166,18 @@ public:
 				continue;
 			}
 
-			uint32_t nread = _socket.async_receive(asio::buffer(_readbuf, BUFF_SIZE), yield[ec]);
+			uint32_t nread = _socket.async_receive(asio::buffer(_readbuf), yield[ec]);
 			if (ec || nread <= 0) {
 				std::cout << "[" << _remoteEp.port() << "] udp src endpoint read handshake failed: " << ec.message() << std::endl;
 				continue;
 			}
+
+			std::cout << "[" << _remoteEp.port() << "] udp src endpoint auth read: " << util::to_hex(_readbuf, nread) << std::endl;
 			if (_readbuf[0] != _handshake_byte[0]) {
 				std::cout << "[" << _remoteEp.port() << "] udp src endpoint handshake no success: " << (int)_readbuf[0] << std::endl;
 				continue;
 			}
-			std::cout << "[" << _remoteEp.port() << "] udp src endpoint endpoint openned." << std::endl;
+			std::cout << "[" << _remoteEp.port() << "] udp src endpoint openned." << std::endl;
 
 			return true;
 		}
@@ -169,13 +185,13 @@ public:
 	}
 
 	void reader(asio::yield_context yield) {
-		std::cout << "[" << _remoteEp.port() << "] udp src endpoint endpoint start reader." << std::endl;
+		std::cout << "[" << _remoteEp.port() << "] udp src endpoint start reader." << std::endl;
 
 		boost::system::error_code ec;
 		if (_dir == 0) {
 			uint32_t seq = 0;
 			while (_started && seq < LOOP_CNT - 10) {
-				uint32_t nread = _socket.async_receive(asio::buffer(_readbuf, BUFF_SIZE), yield[ec]);
+				uint32_t nread = _socket.async_receive(asio::buffer(_readbuf), yield[ec]);
 				if (ec || nread <= 0) {
 					std::cout << "[" << _remoteEp.port() << "] udp src endpoint read handshake failed: " << ec.message() << std::endl;
 					continue;
@@ -186,7 +202,7 @@ public:
 				//std::cout << "[" << _remoteEp.port() << "] seq[" << seq << "] const: " << e << "ms" << std::endl;
 			}
 		}
-		std::cout << "[" << _remoteEp.port() << "] udp src endpoint endpoint reader finish." << std::endl;
+		std::cout << "[" << _remoteEp.port() << "] udp src endpoint reader finish." << std::endl;
 	}
 
 	void DstChannStart(asio::yield_context yield, boost::system::error_code& ec) {
@@ -195,7 +211,7 @@ public:
 			return;
 		}
 
-		std::cout << "[" << _remoteEp.port() << "] udp dest endpoint endpoint openned." << std::endl;
+		std::cout << "[" << _remoteEp.port() << "] udp dest endpoint openned." << std::endl;
 
 		uint32_t cnt = 0;
 		while (_started) {
