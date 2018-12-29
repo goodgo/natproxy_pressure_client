@@ -9,9 +9,9 @@
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/unordered/unordered_set.hpp>
 */
-//#define SERVER_IP "172.16.31.192"
+//#define SERVER_IP "172.16.31.194"
 
-#define SERVER_IP "111.230.172.225" //广东6
+//#define SERVER_IP "111.230.172.225" //广东6
 //#define SERVER_IP "45.126.120.220"//福建1
 
 
@@ -51,7 +51,7 @@ namespace util {
 	{
 		std::string str;
 		char value[5];
-		for (int i = 0; i < len; i++)
+		for (size_t i = 0; i < len; i++)
 		{
 			memset(value, 0, sizeof(value));
 			sprintf(value, "%02X-", buf[i] & 0xff);

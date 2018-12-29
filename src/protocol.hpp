@@ -72,26 +72,28 @@ public:
 		, uiId(0)
 	{}
 	virtual ~CRespLogin() {}
-
 	virtual bool deserialize(const char* p, const size_t n)
 	{
-		if (n < 5)
+		if (n < 8)
 			return false;
 
 		memcpy(&header, p, sizeof(SHeaderPkg));
 		p += sizeof(SHeaderPkg);
 
-		size_t len = p[0];
-		if (n < len + 5)
+		ucErr = p[0];
+		if (ucErr != 0)
+			return false;
+
+		if (n < 8 + header.usBodyLen)
 		{
 			return false;
 		}
-
-		//szGuid.assign(p + 1, len);
-		//memcpy(&uiPrivateAddr, p + 1 + len, 4);
+		memcpy(&uiId, p + 1, 4);
+		return true;
 	}
 
 public:
+	uint8_t ucErr;
 	uint32_t uiId;
 };
 
@@ -100,6 +102,7 @@ class CRespAccelate : public CRespPkgBase
 public:
 	CRespAccelate()
 		: CRespPkgBase()
+		, uiUdpId(0)
 		, uiUdpAddr(0)
 		, usUdpPort(0)
 	{}
@@ -107,13 +110,15 @@ public:
 	virtual bool deserialize(const char* p, const size_t n)
 	{
 		const char* body = p + 9;
-		memcpy(&uiUdpAddr, body, 4);
-		memcpy(&usUdpPort, body + 4, 2);
+		memcpy(&uiUdpId, body, 4);
+		memcpy(&uiUdpAddr, body + 4, 4);
+		memcpy(&usUdpPort, body + 4 + 4, 2);
 
 		return true;
 	}
 
 public:
+	uint32_t uiUdpId;
 	uint32_t uiUdpAddr;
 	uint16_t usUdpPort;
 };
@@ -124,6 +129,7 @@ public:
 	CRespAccess()
 		: CRespPkgBase()
 		, uiSrcId(0)
+		, uiUdpId(0)
 		, uiUdpAddr(0)
 		, usUdpPort(0)
 		, uiPrivateAddr(0)
@@ -132,16 +138,19 @@ public:
 	virtual bool deserialize(const char* p, const size_t n)
 	{
 		const char* body = p + 8;
+
 		memcpy(&uiSrcId, body, 4);
-		memcpy(&uiUdpAddr, body + 4, 4);
-		memcpy(&usUdpPort, body + 4 + 4, 2);
-		memcpy(&uiPrivateAddr, body + 4 + 4 + 2, 4);
+		memcpy(&uiUdpId, body + 4, 4);
+		memcpy(&uiUdpAddr, body + 4 + 4, 4);
+		memcpy(&usUdpPort, body + 4 + 4 + 4, 2);
+		memcpy(&uiPrivateAddr, body + 4 + 4 + 4 + 2, 4);
 
 		return true;
 	}
 
 public:
 	uint32_t uiSrcId;
+	uint32_t uiUdpId;
 	uint32_t uiUdpAddr;
 	uint16_t usUdpPort;
 	uint32_t uiPrivateAddr;
@@ -157,7 +166,6 @@ public:
 		const char* body = p + 8;
 		uint8_t num = body[0];
 		body++;
-		std::cout << "num: " << (int)num << std::endl;
 		for (uint8_t i = 0; i < num; i++) {
 			SSessionInfo info;
 
@@ -180,6 +188,7 @@ class CRespStopAccelate : public CRespPkgBase
 public:
 	CRespStopAccelate()
 		: CRespPkgBase()
+		, uiUdpId(0)
 		, uiUdpAddr(0)
 		, usUdpPort(0)
 	{}
@@ -187,13 +196,15 @@ public:
 	virtual bool deserialize(const char* p, const size_t n)
 	{
 		const char* body = p + 8;
-		memcpy(&uiUdpAddr, body, 4);
-		memcpy(&usUdpPort, body + 4, 2);
+		memcpy(&uiUdpId, body, 4);
+		memcpy(&uiUdpAddr, body + 4, 4);
+		memcpy(&usUdpPort, body + 4 + 4, 2);
 
 		return true;
 	}
 
 public:
+	uint32_t uiUdpId;
 	uint32_t uiUdpAddr;
 	uint16_t usUdpPort;
 };

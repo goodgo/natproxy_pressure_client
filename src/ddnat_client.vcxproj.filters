@@ -33,6 +33,21 @@
     <ClInclude Include="protocol.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="channel.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="srcChannel.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="dstChannel.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ioContextPool.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sessionMgr.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

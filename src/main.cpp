@@ -4,27 +4,26 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/random.hpp>
-
-void StarSession(boost::asio::io_context& io, boost::asio::ip::tcp::endpoint ep, uint32_t id) {
-	CSession::NewSession(io, ep, id);
-}
+#include "sessionMgr.hpp"
 
 int main(char argc, char* argv[]) {
+	
+	if (argc < 5)
+		return 0;
+
+	std::string addr = argv[1];
+	uint16_t port = (uint16_t)atoi(argv[2]);
+	uint32_t threads = (uint32_t)atoi(argv[3]);
+	uint32_t sessions = (uint32_t)atoi(argv[4]);
+	std::string directory = argv[5];
+	int dir = (directory == "src" ? 0 : (directory == "dst" ? 1 : 2));
+
 	srand(time(NULL));
 
-	uint32_t num = argc < 2 ? 0 : (uint32_t)atoi(argv[1]);
-	std::cout << "session num: " << num << std::endl;
 
-	boost::asio::io_context io;
-	boost::asio::steady_timer timer(io);
+	CSessionMgr mgr(addr, port, threads, sessions, dir);
+	mgr.start();
+	std::cerr << "main exit..........." << "\n";
 
-	boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address::from_string(SERVER_IP), 10001);
-	for (uint32_t i = 0; i < num; i++)
-	{
-		timer.expires_after(std::chrono::milliseconds(3));
-		timer.async_wait(boost::bind(StarSession, boost::ref(io), ep, i));
-	}
-		
-	io.run();
 	return 0;
 }

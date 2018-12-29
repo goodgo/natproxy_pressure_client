@@ -157,8 +157,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="chann.hpp" />
+    <ClInclude Include="channel.hpp" />
+    <ClInclude Include="dstChannel.hpp" />
+    <ClInclude Include="ioContextPool.hpp" />
     <ClInclude Include="protocol.hpp" />
+    <ClInclude Include="sessionMgr.hpp" />
     <ClInclude Include="signature.hpp" />
+    <ClInclude Include="srcChannel.hpp" />
     <ClInclude Include="util.hpp" />
     <ClInclude Include="session.hpp" />
     <ClInclude Include="pch.h" />
