@@ -2,8 +2,6 @@
 
 #include "channel.hpp"
 
-
-
 class CDstChannel : public CChannel<CDstChannel>
 {
 public:
@@ -105,16 +103,16 @@ public:
 		while (_started) {
 			_display_timer.expires_from_now(std::chrono::seconds(10));
 			_display_timer.async_wait(yield[ec]);
-			std::cout << _channel_info << "echo packets(" << _echo_packs << "): " << _echo_bytes << " Bytes.\n";
+			std::cout << _channel_info << "echo packets(" << _echo_packs << "): " << util::formatBytes(_echo_bytes) << ".\n";
 		}
 		stop();
 	}
 
 private:
 	asio::steady_timer _timer;
-	char _readbuf[BUFF_SIZE];
 	char _handshake_byte[2];
 	asio::steady_timer	_display_timer;
+
 	uint64_t _echo_packs;
 	uint64_t _echo_bytes;
 };

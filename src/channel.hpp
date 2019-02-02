@@ -109,6 +109,7 @@ protected:
 	uint32_t _id;
 	uint32_t _src_id;
 	uint32_t _dst_id;
+
 	char	_readbuf[BUFF_SIZE];
 	char	_handshake_byte[2];
 	int		_err_cnt;

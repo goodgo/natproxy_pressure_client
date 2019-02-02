@@ -2,6 +2,8 @@
 
 #include "channel.hpp"
 #include "util.hpp"
+#include "config.hpp"
+#include <fstream>
 
 class CSrcChannel : public CChannel<CSrcChannel>
 {
@@ -17,13 +19,26 @@ public:
 		, _send_bytes(0)
 		, _recv_packs(0)
 		, _recv_bytes(0)
-		, _mode(0)
+		, _block(gConfig.channDataBlock())
+		, _times(gConfig.channTestTimes())
+		, _mode(gConfig.channMode())
+		, _interval(gConfig.channSendInterval())
+		, _content(gConfig.channDataContent())
+		, _with_file(false)
 	{
 		sprintf(_handshake_byte, "%c", SRC_HANDSHAKE_BYTE);
+
+		boost::filesystem::path p(_content);
+		if (boost::filesystem::exists(p)) {
+			_with_file = true;
+			_file.open(_content, std::ios::in);
+		}
 	}
 
 	virtual ~CSrcChannel()
 	{
+		if (_with_file)
+			_file.close();
 		std::cout << _channel_info << "src endpoint destroy.\n";
 	}
 
@@ -41,6 +56,7 @@ public:
 		asio::spawn(_strand, boost::bind(&CSrcChannel::displayer, shared_from_this(), boost::placeholders::_1));
 	}
 
+
 	bool channStart(asio::yield_context yield, boost::system::error_code& ec) 
 	{
 		if (!handShake(yield, ec)) {
@@ -48,53 +64,116 @@ public:
 			stop();
 			return false;
 		}
-		asio::spawn(_strand, boost::bind(&CSrcChannel::reader, shared_from_this(), boost::placeholders::_1));
 
-		data_st data[1];
-		size_t size = 10;
-		memcpy(data[0].data, "1234567890", size);
+		if (MODE_INTERVAL == _mode || MODE_RANDOM == _mode) {
+			////// reader ////////////
+			asio::spawn(_strand, boost::bind(&CSrcChannel::reader, shared_from_this(), boost::placeholders::_1));
+			/////////////////////////
 
-		uint32_t seq = 1;
-		while (_started && _err_cnt < ERR_ALLOW_CNT && seq < LOOP_CNT) {
-			data[0].id = seq;
-			boost::posix_time::ptime time_now = boost::posix_time::microsec_clock::universal_time();
+			data_st data[1];
 
-			uint32_t nsend = _socket.async_send(asio::buffer(data, sizeof(data->id) + size), yield[ec]);
-			if (ec || nsend <= 0) {
-				_err_cnt++;
-				std::cout << _channel_info << "src endpoint send failed: " << ec.message() << "\n";
-				continue;
+			for (uint32_t seq = 1; _started && _err_cnt < ERR_ALLOW_CNT && seq < _times; seq++ && (_with_file && !_file.eof())) {
+				data[0].id = seq;
+
+				if (_with_file)
+					_file.getline(data[0].data, _block);
+				else
+					memcpy(data[0].data, _content.c_str(), _content.length());
+
+				boost::posix_time::ptime time_now = boost::posix_time::microsec_clock::universal_time();
+
+				uint32_t nsend = _socket.async_send(asio::buffer(data, sizeof(data->id) + _block), yield[ec]);
+				if (ec || nsend <= 0) {
+					_err_cnt++;
+					std::cout << _channel_info << "src endpoint send failed: " << ec.message() << "\n";
+					continue;
+				}
+
+				_send_packs++;
+				_send_bytes += nsend;
+				_send_seq.insert(SendSeqTimeMap::value_type(seq, time_now));
+
+				if (MODE_INTERVAL == _mode && _interval == 0)
+					continue;
+
+				else if (MODE_RANDOM == _mode)
+					_interval = rand() % 45;
+
+				_timer.expires_from_now(std::chrono::milliseconds(_interval));
+				_timer.async_wait(yield[ec]);
+				if (ec) {
+					_err_cnt++;
+					std::cout << _channel_info << "src endpoint timer error: " << ec.message() << "\n";
+					continue;
+				}
 			}
+			std::cout << _channel_info << "src send packet finish.\n";
 
-			_send_packs++;
-			_send_bytes += nsend;
-			_send_seq.insert(SendSeqTimeMap::value_type(seq++, time_now));
-
-			int rand_ms = rand() % 1000;
-			_timer.expires_from_now(std::chrono::milliseconds(rand_ms));
+			_timer.expires_from_now(std::chrono::seconds(10));
 			_timer.async_wait(yield[ec]);
 			if (ec) {
-				_err_cnt++;
-				std::cout << _channel_info << "src endpoint timer error: " << ec.message() << "\n";
-				continue;
+				std::cout << _channel_info << "udp src endpoint timer error: " << ec.message() << "\n";
+			}
+
+			for (SendSeqTimeMap::iterator send_it = _send_seq.begin(); send_it != _send_seq.end(); ++send_it) {
+				RecvSeqTimeMap::iterator recv_it = _recv_seq.find(send_it->first);
+				if (recv_it != _recv_seq.end()) {
+					uint64_t elapse = (recv_it->second - send_it->second).total_milliseconds();
+					std::cout << _channel_info << "seq[" << send_it->first << "] const: " << elapse << "ms" << "\n";
+				}
+				else {
+					std::cout << _channel_info << "seq[" << send_it->first << "] no found." << "\n";
+				}
 			}
 		}
-		std::cout << _channel_info << "src send packet finish." << seq << "\n";
+		else if (MODE_RESPONSE == _mode) {
+		
+			data_st data[1];
 
-		_timer.expires_from_now(std::chrono::seconds(10));
-		_timer.async_wait(yield[ec]);
-		if (ec) {
-			std::cout << _channel_info << "udp src endpoint timer error: " << ec.message() << "\n";
-		}
+			for (uint32_t seq = 1; _started && _err_cnt < ERR_ALLOW_CNT && seq < _times && (_with_file && !_file.eof()); seq++) {
+				data[0].id = seq;
+				if (_with_file)
+					_file.getline(data[0].data, _block);
+				else
+					memcpy(data[0].data, _content.c_str(), _content.length());
 
-		for (SendSeqTimeMap::iterator send_it = _send_seq.begin(); send_it != _send_seq.end(); ++send_it) {
-			RecvSeqTimeMap::iterator recv_it = _recv_seq.find(send_it->first);
-			if (recv_it != _recv_seq.end()) {
-				uint64_t elapse = (recv_it->second - send_it->second).total_milliseconds();
-				std::cout << _channel_info << "seq[" << send_it->first << "] const: " << elapse << "ms" << "\n";
-			}
-			else {
-				std::cout << _channel_info << "seq[" << send_it->first << "] no found." << "\n";
+				boost::posix_time::ptime tsend = boost::posix_time::microsec_clock::universal_time();
+
+				uint32_t nsend = _socket.async_send(asio::buffer(data, sizeof(data->id) + _block), yield[ec]);
+				if (ec || nsend <= 0) {
+					_err_cnt++;
+					std::cout << _channel_info << "src endpoint send failed: " << ec.message() << "\n";
+					continue;
+				}
+				_send_packs++;
+				_send_bytes += nsend;
+
+				////////////////////////////////////////////////////////////////////////////
+				uint32_t nread = _socket.async_receive(asio::buffer(_readbuf), yield[ec]);
+				if (ec || nread <= 0) {
+					_err_cnt++;
+					std::cout << _channel_info << "src endpoint reader failed: " << ec.message() << "\n";
+					continue;
+				}
+				_recv_packs++;
+				_recv_bytes += nread;
+
+				memcpy(&seq, _readbuf, 4);
+				boost::posix_time::ptime trecv = boost::posix_time::microsec_clock::universal_time();
+				
+				uint64_t elapse = (tsend - trecv).total_milliseconds();
+				std::cout << _channel_info << "seq[" << seq << "] const: " << elapse << "ms." << "\n";
+
+				if (_interval == 0)
+					continue;
+
+				_timer.expires_from_now(std::chrono::milliseconds(_interval));
+				_timer.async_wait(yield[ec]);
+				if (ec) {
+					_err_cnt++;
+					std::cout << _channel_info << "src endpoint timer error: " << ec.message() << "\n";
+					continue;
+				}
 			}
 		}
 
@@ -170,17 +249,21 @@ public:
 			_display_timer.expires_from_now(std::chrono::seconds(10));
 			_display_timer.async_wait(yield[ec]);
 			std::cout << _channel_info 
-				<< " RX packets(" << _send_packs << "): " << _send_bytes
-				<< " Bytes | TX packages(" << _recv_packs << "): " << _recv_bytes << " Bytes.\n";
+				<< " RX packets(" << _send_packs << "): " << util::formatBytes(_send_bytes)
+				<< " | TX packages(" << _recv_packs << "): " << util::formatBytes(_recv_bytes) << ".\n";
 		}
 		stop();
 	}
 
 private:
-	enum { LOOP_CNT = 1001 };
 	enum {
 		RAND_TIME_SEND,
 		ECHO_SEND
+	};
+	enum {
+		MODE_INTERVAL = 0,
+		MODE_RANDOM = 1,
+		MODE_RESPONSE = 2
 	};
 
 	asio::steady_timer	_timer;
@@ -194,12 +277,19 @@ private:
 	SendSeqTimeMap _send_seq;
 	RecvSeqTimeMap _recv_seq;
 
+	uint32_t _block;
+	uint32_t _times;
+	uint32_t _mode;
+	uint32_t _interval;
+	std::string _content;
+	bool _with_file;
+	std::fstream _file;
+
 	uint64_t _send_packs;
 	uint64_t _send_bytes;
 	uint64_t _recv_packs;
 	uint64_t _recv_bytes;
 
-	uint8_t	_mode;
 	typedef struct {
 		uint32_t id;
 		char	 data[BUFF_SIZE];

@@ -7,7 +7,7 @@
 class CSessionMgr
 {
 public:
-	CSessionMgr(std::string& addr, uint16_t port, size_t threads, size_t sessions, int dir)
+	CSessionMgr(std::string addr, uint16_t port, size_t threads, size_t sessions, int dir, bool manual_mode = true)
 		: _io_context_pool(threads)
 		, _timer(_io_context_pool.getIoContext())
 		, _ep(boost::asio::ip::address::from_string(addr), port)
@@ -15,6 +15,7 @@ public:
 		, _session_cnt(sessions)
 		, _id(0)
 		, _dir(dir)
+		, _manual_mode(manual_mode)
 	{
 	
 	}
@@ -38,7 +39,7 @@ public:
 		{
 			_timer.expires_after(std::chrono::milliseconds(300));
 			_timer.async_wait(yield[ec]);
-			CSession::self_type s = CSession::NewSession(_io_context_pool.getIoContext(), _ep, i, _dir);
+			CSession::self_type s = CSession::NewSession(_io_context_pool.getIoContext(), _ep, i, _dir, _manual_mode);
 			_sessions.push_back(s);
 		}
 	}
@@ -52,4 +53,5 @@ private:
 	size_t _session_cnt;
 	uint32_t _id;
 	int _dir;
+	bool _manual_mode;
 };

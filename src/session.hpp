@@ -28,6 +28,7 @@
 #include "srcChannel.hpp"
 #include "dstChannel.hpp"
 #include "protocol.hpp"
+#include "config.hpp"
 
 namespace asio {
 	using namespace boost::asio;
@@ -39,7 +40,7 @@ class CSession : public boost::enable_shared_from_this<CSession>, boost::noncopy
 public:
 	typedef boost::shared_ptr<CSession> self_type;
 
-	CSession(asio::io_context& io, asio::ip::tcp::endpoint& ep, uint32_t id, int dir)
+	CSession(asio::io_context& io, asio::ip::tcp::endpoint& ep, uint32_t id, int dir, bool manual_mode)
 		: _strand(io)
 		, _cond(boost::make_shared<async_condition_variable>(io))
 		, _timer(io)
@@ -52,18 +53,19 @@ public:
 		, _loginid(0)
 		, _chann_cnt(0)
 		, _started(true)
+		, _manual_mode(manual_mode)
 	{
 		_guid = util::randGetGuid();
 		_gameid = "game_" + _guid;
 		_private_addr = util::randGetAddr();
 		_chann_cnt = 1;//rand() % 10;
 
-		std::cout << "guid:" << _guid << "_gameid:" << _gameid << "_vip:" << _private_addr << "_channnum: " << _chann_cnt << std::endl;
+		//std::cout << "guid:" << _guid << "_gameid:" << _gameid << "_vip:" << _private_addr << "_channnum: " << _chann_cnt << std::endl;
 	}
 
-	static self_type NewSession(asio::io_context& io, asio::ip::tcp::endpoint& ep, uint32_t id, int dir) 
+	static self_type NewSession(asio::io_context& io, asio::ip::tcp::endpoint& ep, uint32_t id, int dir, bool manual_mode)
 	{
-		self_type ss(new CSession(io, ep, id, dir));
+		self_type ss(new CSession(io, ep, id, dir, manual_mode));
 		ss->Go();
 		return ss;
 	}
@@ -90,7 +92,7 @@ public:
 			std::cout << "connect failed: " << ec.message() << std::endl;
 			return;
 		}
-		/*
+		
 		if (!reqLogin(yield, ec)) {
 			Close();
 			return;
@@ -100,7 +102,7 @@ public:
 			Close();
 			return;
 		}
-		*/
+		
 		asio::spawn(_strand, boost::bind(&CSession::reader, shared_from_this(), boost::placeholders::_1));
 
 		if (_dir != 1) {
@@ -151,7 +153,7 @@ public:
 			_rbuf.consume(8 + _header.usBodyLen);
 		}
 		
-		std::cout << "session[" << _loginid << "] exit reader." << std::endl;
+		std::cout << "[" << _loginid << "] exit reader." << std::endl;
 	}
 
 	bool doRead(asio::yield_context yield, boost::system::error_code& ec, SHeaderPkg& header)
@@ -174,8 +176,8 @@ public:
 			return false;
 		}
 
-		std::cout << "[" << _loginid << "] read(" << 8 + header.usBodyLen  << "): "
-			<< util::to_hex(pbuf, 8 + header.usBodyLen) << std::endl;
+		//std::cout << "[" << _loginid << "] read(" << 8 + header.usBodyLen  << "): "
+		//	<< util::to_hex(pbuf, 8 + header.usBodyLen) << std::endl;
 		
 		return true;
 	}
@@ -208,7 +210,7 @@ public:
 	{
 		for (uint32_t i = 0; i < _chann_cnt;) {
 			if (!accelate(yield, ec))
-				std::cout << _loginid << " wait accelate error: " << ec.message() << std::endl;
+				std::cout << "[" << _loginid << "] wait accelate error: " << ec.message() << std::endl;
 			else
 				i++;
 
@@ -216,7 +218,7 @@ public:
 			_get_clients_timer.expires_from_now(std::chrono::seconds(rand_sec));
 			_get_clients_timer.async_wait(yield[ec]);
 			if (!_started || ec) {
-				std::cout << _loginid << " wait accelate error: " << ec.message() << std::endl;
+				std::cout << "[" << _loginid << "] wait accelate error: " << ec.message() << std::endl;
 				break;
 			}
 		}
@@ -225,7 +227,7 @@ public:
 
 	bool accelate(asio::yield_context yield, boost::system::error_code& ec)
 	{
-		std::cout << _loginid << " select accelate to " << _dst_info.uiId << std::endl;
+		std::cout << "[" << _loginid << "] select accelate to " << _dst_info.uiId << std::endl;
 
 		if (_dst_info.uiId == 0 || _dst_info.uiId == _loginid)
 			return false;
@@ -249,7 +251,7 @@ public:
 			Close();
 			return false;
 		}
-		std::cout << _loginid << " send accelate: " << util::to_hex(package, 8 + bodylen) << std::endl;
+		std::cout << "[" << _loginid << "] send accelate: " << util::to_hex(package, 8 + bodylen) << std::endl;
 		return true;
 	}
 
@@ -325,12 +327,32 @@ public:
 			boost::shared_ptr<CRespGetSessions> pkg = boost::make_shared<CRespGetSessions>();
 			pkg->deserialize(p, n);
 			
-			if (pkg->_sessions.size() > 1) {
-				while (_dst_info.uiId == 0 || _dst_info.uiId == _loginid) {
-					int rd = rand() % pkg->_sessions.size();
-					_dst_info = pkg->_sessions[rd];
+			if (_manual_mode) {
+
+				std::cout << "[" << _loginid << " get clients: [ ";
+				int i = 0;
+				for (auto it = pkg->_sessions.begin(); it != pkg->_sessions.end(); ++it, ++i) {
+					std::cout << "(" << i << ": " << it->uiId << "), ";
 				}
-				std::cout << "session[" << _loginid << "] accelate to: " << _dst_info.uiId << std::endl;
+				std::cout << "\n[" << _loginid << "] input destination index: ";
+
+				uint32_t dst_index;
+				std::cin >> dst_index;
+				if (dst_index >= pkg->_sessions.size()) {
+					std::cout << "[" << _loginid << "] input index error! " << std::endl;
+					continue;
+				}
+				_dst_info = pkg->_sessions[dst_index];
+				std::cout << "[" << _loginid << "] you select destination index: " << dst_index << " --- " << _dst_info.uiId << std::endl;
+			}
+			else {
+				if (pkg->_sessions.size() > 1) {
+					while (_dst_info.uiId == 0 || _dst_info.uiId == _loginid) {
+						int rd = rand() % pkg->_sessions.size();
+						_dst_info = pkg->_sessions[rd];
+					}
+					std::cout << "[" << _loginid << "] automate select accelate to: " << _dst_info.uiId << std::endl;
+				}
 			}
 
 			_rbuf.consume(8 + _header.usBodyLen);
@@ -345,7 +367,7 @@ public:
 			}
 		}
 
-		std::cout << _loginid << " send get clients: " << util::to_hex(package, 8 + bodylen) << std::endl;
+		std::cout << "[" << _loginid << "] send get clients: " << util::to_hex(package, 8 + bodylen) << std::endl;
 		return true;
 	}
 
@@ -415,7 +437,9 @@ private:
 	uint32_t	_private_addr;
 	uint32_t	_id;
 	uint32_t	_loginid;
+	std::string _select_mode;
 	SSessionInfo _dst_info;
 	uint32_t	_chann_cnt;
 	bool		_started;
+	bool		_manual_mode;
 };

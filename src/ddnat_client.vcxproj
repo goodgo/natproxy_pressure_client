@@ -158,6 +158,7 @@
   <ItemGroup>
     <ClInclude Include="chann.hpp" />
     <ClInclude Include="channel.hpp" />
+    <ClInclude Include="config.hpp" />
     <ClInclude Include="dstChannel.hpp" />
     <ClInclude Include="ioContextPool.hpp" />
     <ClInclude Include="protocol.hpp" />
