@@ -67,7 +67,10 @@ public:
 			stop();
 			return;
 		}
-		_socket.set_option(asio::socket_base::reuse_address(true));
+		_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+		_socket.set_option(asio::ip::udp::socket::receive_buffer_size(4096));
+		_socket.set_option(asio::ip::udp::socket::send_buffer_size(4096));
+
 		_socket.bind(_local_ep, ec);
 		if (ec) {
 			std::cout << _channel_info << "bind failed: " << ec.message() << "\n";

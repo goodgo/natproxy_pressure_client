@@ -20,19 +20,19 @@ public:
 		boost::program_options::options_description desc("allow option");
 		desc.add_options()
 			("help,h", "help message")
-			("addr,a", boost::program_options::value<std::string>(&_srv_addr), "service addr")
-			("port,p", boost::program_options::value<uint16_t>(&_srv_port), "service port")
-			("endpoint,e", boost::program_options::value<uint32_t>(&_endpoint), "endpoint option(0: source ep, 1: destination ep)")
-			("automation,A", boost::program_options::value<bool>(&_automation), "select mode")
-			("sessions,S", boost::program_options::value<uint32_t>(&_sessions), "sessions num")
-			("threads,T", boost::program_options::value<uint32_t>(&_threads), "threads num")
-			("log,l", boost::program_options::value<std::string>(&_log_path), "log path")
-			("content,c", boost::program_options::value<std::string>(&_chann_data_content), "channel test content or file path")
-			("block,b", boost::program_options::value<uint32_t>(&_chann_data_block), "channel send data block bytes")
-			("times,t", boost::program_options::value<uint32_t>(&_chann_test_times), "channel test times")
-			("mode,m", boost::program_options::value<uint32_t>(&_chann_mode), "channel test mode(0: interval, 1: random, 2: response)")
-			("interval,i", boost::program_options::value<uint32_t>(&_chann_send_interval), "channel test interval(sec)")
-			("heartbeat,H", boost::program_options::value<uint32_t>(&_chann_heartbeat_interval), "channel heartbeat interval(sec)")
+			("addr,a", boost::program_options::value<std::string>(&_srv_addr), "service addr (default: 127.0.0.1)")
+			("port,p", boost::program_options::value<uint16_t>(&_srv_port), "service port (default: 10001)")
+			("endpoint,e", boost::program_options::value<uint32_t>(&_endpoint), "endpoint option(0: source ep, 1: destination ep) (default: 0)")
+			("log,l", boost::program_options::value<std::string>(&_log_path), "log path (default: "")")
+			("automation,A", boost::program_options::value<bool>(&_automation), "src select mode (default: false)")
+			("sessions,S", boost::program_options::value<uint32_t>(&_sessions), "src sessions num (default: 1)")
+			("threads,T", boost::program_options::value<uint32_t>(&_threads), "src threads num (default: 1)")
+			("content,c", boost::program_options::value<std::string>(&_chann_data_content), "src channel test content or file path (default: ./log.log)")
+			("block,b", boost::program_options::value<uint32_t>(&_chann_data_block), "src channel send data block bytes (default: 1400)")
+			("times,t", boost::program_options::value<uint32_t>(&_chann_test_times), "src channel test times (default: 10000)")
+			("mode,m", boost::program_options::value<uint32_t>(&_chann_mode), "src channel test mode(0: interval, 1: random, 2: response) (default: 0)")
+			("interval,i", boost::program_options::value<uint32_t>(&_chann_send_interval), "src channel test interval(ms) (default: 0)")
+			("heartbeat,H", boost::program_options::value<uint32_t>(&_chann_heartbeat_interval), "channel heartbeat interval(sec) (default: 30)")
 			;
 
 		boost::program_options::variables_map vm;
@@ -91,8 +91,8 @@ public:
 
 private:
 	CConfig()
-		: _srv_addr("")
-		, _srv_port(0)
+		: _srv_addr("127.0.0.1")
+		, _srv_port(10001)
 		, _automation(false)
 		, _threads(1)
 		, _sessions(1)

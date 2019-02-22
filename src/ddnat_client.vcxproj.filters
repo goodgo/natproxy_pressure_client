@@ -27,9 +27,6 @@
     <ClInclude Include="signature.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="chann.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="protocol.hpp">
       <Filter>头文件</Filter>
     </ClInclude>

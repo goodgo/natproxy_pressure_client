@@ -40,7 +40,7 @@ class CSession : public boost::enable_shared_from_this<CSession>, boost::noncopy
 public:
 	typedef boost::shared_ptr<CSession> self_type;
 
-	CSession(asio::io_context& io, asio::ip::tcp::endpoint& ep, uint32_t id, int dir, bool manual_mode)
+	CSession(asio::io_context& io, asio::ip::tcp::endpoint& ep, uint32_t id, int dir, bool auto_mode)
 		: _strand(io)
 		, _cond(boost::make_shared<async_condition_variable>(io))
 		, _timer(io)
@@ -53,7 +53,7 @@ public:
 		, _loginid(0)
 		, _chann_cnt(0)
 		, _started(true)
-		, _manual_mode(manual_mode)
+		, _auto_mode(auto_mode)
 	{
 		_guid = util::randGetGuid();
 		_gameid = "game_" + _guid;
@@ -63,9 +63,9 @@ public:
 		//std::cout << "guid:" << _guid << "_gameid:" << _gameid << "_vip:" << _private_addr << "_channnum: " << _chann_cnt << std::endl;
 	}
 
-	static self_type NewSession(asio::io_context& io, asio::ip::tcp::endpoint& ep, uint32_t id, int dir, bool manual_mode)
+	static self_type NewSession(asio::io_context& io, asio::ip::tcp::endpoint& ep, uint32_t id, int dir, bool auto_mode)
 	{
-		self_type ss(new CSession(io, ep, id, dir, manual_mode));
+		self_type ss(new CSession(io, ep, id, dir, auto_mode));
 		ss->Go();
 		return ss;
 	}
@@ -133,6 +133,7 @@ public:
 				boost::shared_ptr<CRespAccelate> pkg = boost::make_shared<CRespAccelate>();
 				pkg->deserialize(p, n);
 				onAccelate(pkg);
+				return;
 			}break;
 			case EN_FUNC::GET_CONSOLES: {
 
@@ -141,6 +142,7 @@ public:
 				boost::shared_ptr<CRespAccess> pkg = boost::make_shared<CRespAccess>();
 				pkg->deserialize(p, n);
 				onAccess(pkg);
+				return;
 			}break;
 			case EN_FUNC::STOP_ACCELATE: {
 				boost::shared_ptr<CRespStopAccelate> pkg = boost::make_shared<CRespStopAccelate>();
@@ -327,7 +329,7 @@ public:
 			boost::shared_ptr<CRespGetSessions> pkg = boost::make_shared<CRespGetSessions>();
 			pkg->deserialize(p, n);
 			
-			if (_manual_mode) {
+			if (!_auto_mode) {
 
 				std::cout << "[" << _loginid << " get clients: [ ";
 				int i = 0;
@@ -441,5 +443,5 @@ private:
 	SSessionInfo _dst_info;
 	uint32_t	_chann_cnt;
 	bool		_started;
-	bool		_manual_mode;
+	bool		_auto_mode;
 };

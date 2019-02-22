@@ -58,14 +58,16 @@ public:
 				std::cout << _channel_info << "dst endpoint read failed: " << ec.message() << "\n";
 				continue;
 			}
-
-			bytes = _socket.async_send(asio::buffer(_readbuf, bytes), yield[ec]);
-			if (ec || bytes <= 0) {
-				_err_cnt++;
-				std::cout << _channel_info << "dst endpoint echo failed: " << ec.message() << "\n";
-				continue;
+			
+			if (_echo_packs % 10 == 0) {
+				uint32_t send_bytes = _socket.async_send(asio::buffer(_readbuf, bytes), yield[ec]);
+				if (ec || send_bytes != bytes) {
+					_err_cnt++;
+					std::cout << _channel_info << "dst endpoint echo failed: " << ec.message() << "\n";
+					continue;
+				}
 			}
-
+			
 			_echo_packs++;
 			_echo_bytes += bytes;
 		}
@@ -100,10 +102,19 @@ public:
 	void displayer(asio::yield_context yield)
 	{
 		boost::system::error_code ec;
+		uint64_t echo_packs_prev = 0;
+		uint64_t echo_bytes_prev = 0;
 		while (_started) {
 			_display_timer.expires_from_now(std::chrono::seconds(10));
 			_display_timer.async_wait(yield[ec]);
-			std::cout << _channel_info << "echo packets(" << _echo_packs << "): " << util::formatBytes(_echo_bytes) << ".\n";
+			std::cout << _channel_info
+				<< " echo packets: " << _echo_packs << "(" << (_echo_packs - echo_packs_prev) / 10 << " P/S)"
+				<< " Bytes:  " << util::formatBytes(_echo_bytes) << "("
+				<< util::formatBytes((_echo_bytes - echo_bytes_prev)/10)
+				<< "/S).\n"
+				;
+			echo_packs_prev = _echo_packs;
+			echo_bytes_prev = _echo_bytes;
 		}
 		stop();
 	}

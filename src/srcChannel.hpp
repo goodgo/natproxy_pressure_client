@@ -32,6 +32,7 @@ public:
 		if (boost::filesystem::exists(p)) {
 			_with_file = true;
 			_file.open(_content, std::ios::in);
+			std::cout << _channel_info << "src endpoint open file: " << _content << "\n";
 		}
 	}
 
@@ -72,7 +73,16 @@ public:
 
 			data_st data[1];
 
-			for (uint32_t seq = 1; _started && _err_cnt < ERR_ALLOW_CNT && seq < _times; seq++ && (_with_file && !_file.eof())) {
+			for (uint32_t seq = 1; _started && _err_cnt < ERR_ALLOW_CNT; seq++ ) {
+				if (_with_file) {
+					if (_file.eof())
+						break;
+				}
+				else {
+					if (seq > _times)
+						break;
+				}
+
 				data[0].id = seq;
 
 				if (_with_file)
@@ -91,7 +101,7 @@ public:
 
 				_send_packs++;
 				_send_bytes += nsend;
-				_send_seq.insert(SendSeqTimeMap::value_type(seq, time_now));
+				//_send_seq.insert(SendSeqTimeMap::value_type(seq, time_now));
 
 				if (MODE_INTERVAL == _mode && _interval == 0)
 					continue;
@@ -115,6 +125,7 @@ public:
 				std::cout << _channel_info << "udp src endpoint timer error: " << ec.message() << "\n";
 			}
 
+			/*
 			for (SendSeqTimeMap::iterator send_it = _send_seq.begin(); send_it != _send_seq.end(); ++send_it) {
 				RecvSeqTimeMap::iterator recv_it = _recv_seq.find(send_it->first);
 				if (recv_it != _recv_seq.end()) {
@@ -125,6 +136,7 @@ public:
 					std::cout << _channel_info << "seq[" << send_it->first << "] no found." << "\n";
 				}
 			}
+			*/
 		}
 		else if (MODE_RESPONSE == _mode) {
 		
@@ -245,12 +257,25 @@ public:
 	void displayer(asio::yield_context yield)
 	{
 		boost::system::error_code ec;
+		uint64_t send_packs_prev = 0;
+		uint64_t send_bytes_prev = 0;
+		uint64_t recv_packs_prev = 0;
+		uint64_t recv_bytes_prev = 0;
+
 		while (_started) {
 			_display_timer.expires_from_now(std::chrono::seconds(10));
 			_display_timer.async_wait(yield[ec]);
 			std::cout << _channel_info 
-				<< " RX packets(" << _send_packs << "): " << util::formatBytes(_send_bytes)
-				<< " | TX packages(" << _recv_packs << "): " << util::formatBytes(_recv_bytes) << ".\n";
+				<< " TX packets: " << _send_packs << "(" << (_send_packs - send_packs_prev) / 10 << " P/S)"
+				<< " Bytes:  " << util::formatBytes(_send_bytes) << "(" << util::formatBytes((_send_bytes - send_bytes_prev)/10)
+				<< "/S) | RX packets(" << _recv_packs << "): " << (_recv_packs - recv_packs_prev) / 10 << " P/S)"
+				<< " Bytes:  " << util::formatBytes(_recv_bytes) << "(" << util::formatBytes((_recv_bytes - recv_bytes_prev) / 10)
+				<< "/S). \n"
+				;
+			send_packs_prev = _send_packs;
+			recv_packs_prev = _recv_packs;
+			send_bytes_prev = _send_bytes;
+			recv_bytes_prev = _recv_bytes;
 		}
 		stop();
 	}
